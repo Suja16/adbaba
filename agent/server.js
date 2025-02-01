@@ -1,12 +1,22 @@
 require("dotenv").config();
-const { twitterClient } = require("./twitterClient.js")
+const path = require("path");
+const { generateTweetText } = require("./generateTweet.js");
+const { postTweet } = require("./postTweet.js");
 
-const tweet = async () => {
+async function server() {
   try {
-    await twitterClient.v2.tweet("Hello world!");
-  } catch (e) {
-    console.log(e)
+    // const trends = await fetchLatestTrends();
+    const tweetText = await generateTweetText();
+    const mediaFilePath = path.join(__dirname, "images.png");
+
+    if (tweetText) {
+      await postTweet(tweetText, mediaFilePath);
+    } else {
+      console.error("❌ Failed to generate tweet text.");
+    }
+  } catch (error) {
+    console.error("❌ Error in server function:", error);
   }
 }
 
-tweet();
+server();

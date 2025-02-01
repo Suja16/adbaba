@@ -6,7 +6,7 @@ const client = new TwitterApi({
   accessToken: process.env.ACCESS_TOKEN,
   accessSecret: process.env.ACCESS_SECRET,
 });
-
+    
 const bearer = new TwitterApi(process.env.BEARER_TOKEN);
 
 const twitterClient = client.readWrite;
