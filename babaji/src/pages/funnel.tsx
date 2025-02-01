@@ -112,19 +112,7 @@ const LayoutFlow = () => {
     >
       <Controls />
       <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
-      <MiniMap
-        nodeColor={(node) => {
-          switch (node.type) {
-            case "input":
-              return "blue";
-            default:
-              return "red";
-          }
-        }}
-        nodeStrokeWidth={3}
-        zoomable
-        pannable
-      />
+      <MiniMap nodeStrokeWidth={3} zoomable pannable />
     </ReactFlow>
   );
 };

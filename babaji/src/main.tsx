@@ -1,12 +1,11 @@
 import { StrictMode } from "react";
 import App from "./App";
-import { ThemeProvider } from "@emotion/react";
-import theme from "./theme";
 import ReactDOM from "react-dom/client";
 
 import { createHttpLink } from "@apollo/client";
 
 import { InMemoryCache, ApolloClient, ApolloProvider } from "@apollo/client";
+import StyleThemeProvider from "./themesystem";
 
 function makeClient() {
   const httpLink = createHttpLink({
@@ -37,10 +36,10 @@ const client = makeClient();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ThemeProvider theme={theme}>
+    <StyleThemeProvider>
       <ApolloProvider client={client}>
         <App />
       </ApolloProvider>
-    </ThemeProvider>
+    </StyleThemeProvider>
   </StrictMode>
 );
