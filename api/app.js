@@ -4,7 +4,7 @@ require("dotenv").config();
 const processDocumentRouter = require("./processDocument");
 const generateVideoRouter = require("./generateVideoService");
 const checkVideoStatusRouter = require("./checkVideoStatusService");
-
+const generateFunnelFlowRouter = require("./generateFunnelFlow");
 const app = express();
 app.use(express.json());
 
@@ -14,6 +14,7 @@ const PORT = process.env.PORT || 3000;
 app.use(generateVideoRouter);
 app.use(checkVideoStatusRouter);
 app.use(processDocumentRouter);
+app.use(generateFunnelFlowRouter);
 
 // Root route
 app.get("/", (req, res) => {
