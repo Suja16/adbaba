@@ -4,12 +4,13 @@
     "target": "esnext",
     "jsx": "react-jsx",
     "strict": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "baseUrl": "./",
     "paths": {
       "@typings/gql": ["types/gql"]
-    }
+    },
+    "noEmit": true
   },
   "include": ["src", "types/gql"],
   "exclude": ["node_modules"]
