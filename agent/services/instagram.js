@@ -35,7 +35,8 @@ const postToInsta = async () => {
 
     await ig.publish.photo({
       file: imageBuffer,
-      caption: "Really nice photo from the internet!",
+      caption:
+        "Really nice photo from the internError posting to Instagram:et!",
     });
 
     console.log("Post uploaded successfully!");
@@ -43,5 +44,3 @@ const postToInsta = async () => {
     console.error("Error posting to Instagram:", error);
   }
 };
-
-postToInsta();

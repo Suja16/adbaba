@@ -1,25 +1,106 @@
 require("dotenv").config();
 const express = require("express");
 const path = require("path");
+const axios = require("axios");
 const { generateTweetText } = require("./services/generateTweet.js");
 const { postTweet } = require("./services/postTweet.js");
 const { postToInsta } = require("./services/instagram.js");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3002;
+const HASURA_GRAPHQL_URL = "https://datathon2025.hasura.app/v1/graphql";
+const HASURA_ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET;
 
 app.use(express.json());
 
-app.get("/api/generate-tweet", async (req, res) => {
+/**
+ * GET /api/generate-tweet/:id
+ * Fetches business data using the provided ID and generates a tweet text.
+ */
+app.get("/api/generate-tweet/:id", async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ error: "Business ID is required." });
+  }
+
   try {
-    const tweetText = await generateTweetText();
+    // GraphQL Query
+    const query = `
+      query MyQuery($id: uuid!) {
+        businesses(where: {id: {_eq: $id}}) {
+          ad_spend_distribution
+          business_size
+          content_strategy
+          customer_acquisition_cost
+          customer_behavior
+          customer_interests
+          customer_lifetime_value
+          description
+          email_subscribers
+          founded_year
+          hq_location
+          id
+          industry
+          influencer_marketing
+          marketing_budget
+          name
+          primary_ad_channels
+          seo_rank
+          social_followers
+          social_media_channels
+          target_age_group
+          target_gender
+          target_location
+          website
+          website_traffic
+        }
+      }
+    `;
+
+    // Request Payload
+    const payload = {
+      query,
+      variables: { id },
+    };
+
+    const response = await axios.post(HASURA_GRAPHQL_URL, payload, {
+      headers: {
+        "Content-Type": "application/json",
+        "x-hasura-admin-secret": HASURA_ADMIN_SECRET,
+      },
+    });
+
+    // Log the full response
+    console.log("Hasura response:", JSON.stringify(response.data, null, 2));
+
+    if (response.data.errors) {
+      console.error(
+        "GraphQL Error:",
+        JSON.stringify(response.data.errors, null, 2)
+      );
+      return res.status(500).json({
+        error: "GraphQL query failed.",
+        details: response.data.errors,
+      });
+    }
+
+    const businessData = response.data.data?.businesses?.[0];
+
+    if (!businessData) {
+      return res.status(404).json({ error: "Business not found." });
+    }
+
+    // Generate Tweet Text
+    const tweetText = await generateTweetText(businessData);
     if (tweetText) {
       res.json({ tweetText });
     } else {
-      res.status(500).json({ error: "Failed to generate tweet text. " });
+      res.status(500).json({ error: "Failed to generate tweet text." });
     }
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error fetching business data:", error.message);
+    res.status(500).json({ error: "Error fetching business data." });
   }
 });
 

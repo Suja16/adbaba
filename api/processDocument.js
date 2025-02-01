@@ -140,16 +140,40 @@ Based on this document, extract and structure relevant data into the following J
       aiResponse = geminiResponse.data.candidates[0]?.content?.parts[0]?.text;
       console.log("Gemini response:", aiResponse);
 
-      // **Parse AI response to JSON**
+      // **Fix: Clean up the response before parsing JSON**
       let extractedData;
       try {
-        extractedData = JSON.parse(aiResponse);
+        const cleanedResponse = aiResponse.replace(/```json|```/g, "").trim();
+        extractedData = JSON.parse(cleanedResponse);
+
+        // **Convert comma-separated strings to arrays**
+        function parseToArray(value) {
+          return typeof value === "string"
+            ? value.split(",").map((item) => item.trim())
+            : value;
+        }
+
+        extractedData.customer_interests = parseToArray(
+          extractedData.customer_interests
+        );
+        extractedData.social_media_channels = parseToArray(
+          extractedData.social_media_channels
+        );
+        extractedData.primary_ad_channels = parseToArray(
+          extractedData.primary_ad_channels
+        );
+        extractedData.content_strategy = parseToArray(
+          extractedData.content_strategy
+        );
+        extractedData.target_location = parseToArray(
+          extractedData.target_location
+        );
       } catch (parseError) {
         console.error("Error parsing Gemini response:", parseError.message);
         return res.status(500).json({ error: "Failed to parse AI response." });
       }
 
-      // **Hasura GraphQL Mutation**
+      // **Proceed with Hasura Mutation**
       const HASURA_GRAPHQL_URL = "https://datathon2025.hasura.app/v1/graphql";
       const HASURA_ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET;
 
@@ -254,7 +278,7 @@ Based on this document, extract and structure relevant data into the following J
       console.log(`File uploaded successfully. OpenAI File ID: ${fileId}`);
 
       const openAiPayload = {
-        model: "gpt-4o",
+        model: "gpt-3.5-turbo",
         messages: [
           {
             role: "system",
