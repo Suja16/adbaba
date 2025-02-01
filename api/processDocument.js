@@ -32,7 +32,48 @@ router.post("/process-document", upload.single("doc"), async (req, res) => {
 
     const filePath = req.file.path;
     const fileName = req.file.originalname;
-    const prompt = `What are the contents of the given document?`;
+    const prompt = `I will provide a company representation document containing details about the company, its industry, clients, past marketing experiences, and target audience.
+
+Based on this document, extract and structure relevant data into the following JSON fields:
+{
+  "id": "uuid (generated using gen_random_uuid())",
+  "name": "Company Name (Required)",
+  "industry": "Industry (Required)",
+  "description": "Tagline/One-line description (Required)",
+  "website": "Website URL (Required)",
+  "founded_year": "Year of establishment (Optional)",
+  "hq_location": "HQ Location (Required)",
+  "business_size": "Number of employees (Optional)",
+  "target_age_group": "Target audience age range (Required)",
+  "target_gender": "Target gender (Required: Male, Female, Other, All)",
+  "customer_interests": "Key interests of the target audience (Optional)",
+  "customer_behavior": "Customer engagement/behavior insights (Optional)",
+  "marketing_budget": "Total marketing budget (Optional)",
+  "customer_acquisition_cost": "Cost to acquire a customer (Optional)",
+  "customer_lifetime_value": "Predicted revenue per customer (Optional)",
+  "ad_spend_distribution": {
+    "affiliate_marketing": "Percentage (Optional)",
+    "social_media": "Percentage (Optional)",
+    "search_engine": "Percentage (Optional)"
+  },
+  "website_traffic": "Number of website visitors (Optional)",
+  "social_media_channels": ["List of social media platforms used (Optional)"],
+  "social_followers": {
+    "platform": "Number of followers per platform (Optional)"
+  },
+  "seo_rank": "SEO ranking position (Optional)",
+  "email_subscribers": "Number of email subscribers (Optional)",
+  "primary_ad_channels": ["Main advertising platforms (Optional)"],
+  "content_strategy": ["Types of content used (Optional)"],
+  "influencer_marketing": "Boolean: true for Yes, false for No (Optional)",
+  "target_location": ["Key markets/regions targeted (Optional)"]
+}
+  Instructions:
+	-	Required fields must always be filled.
+	-	Optional fields can be left null if no relevant data is found.
+	-	Ensure accurate extraction and mapping of details.
+	-	Return the final structured data in valid JSON format.
+`;
 
     let aiResponse;
 
@@ -98,6 +139,94 @@ router.post("/process-document", upload.single("doc"), async (req, res) => {
 
       aiResponse = geminiResponse.data.candidates[0]?.content?.parts[0]?.text;
       console.log("Gemini response:", aiResponse);
+
+      // **Parse AI response to JSON**
+      let extractedData;
+      try {
+        extractedData = JSON.parse(aiResponse);
+      } catch (parseError) {
+        console.error("Error parsing Gemini response:", parseError.message);
+        return res.status(500).json({ error: "Failed to parse AI response." });
+      }
+
+      // **Hasura GraphQL Mutation**
+      const HASURA_GRAPHQL_URL = "https://datathon2025.hasura.app/v1/graphql";
+      const HASURA_ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET;
+
+      const mutationQuery = `
+    mutation MyMutation($object: businesses_insert_input!) {
+      insert_businesses_one(object: $object) {
+        id
+      }
+    }
+  `;
+
+      const hasuraPayload = {
+        query: mutationQuery,
+        variables: {
+          object: {
+            id: extractedData.id || "",
+            name: extractedData.name || "",
+            industry: extractedData.industry || "",
+            description: extractedData.description || "",
+            website: extractedData.website || "",
+            founded_year: extractedData.founded_year || null,
+            hq_location: extractedData.hq_location || "",
+            business_size: extractedData.business_size || null,
+            target_age_group: extractedData.target_age_group || null,
+            target_gender: extractedData.target_gender || "",
+            customer_interests: extractedData.customer_interests || null,
+            customer_behavior: extractedData.customer_behavior || "",
+            marketing_budget: extractedData.marketing_budget || null,
+            customer_acquisition_cost:
+              extractedData.customer_acquisition_cost || null,
+            customer_lifetime_value:
+              extractedData.customer_lifetime_value || null,
+            ad_spend_distribution: extractedData.ad_spend_distribution || null,
+            website_traffic: extractedData.website_traffic || null,
+            social_media_channels: extractedData.social_media_channels || null,
+            social_followers: extractedData.social_followers || null,
+            seo_rank: extractedData.seo_rank || null,
+            email_subscribers: extractedData.email_subscribers || null,
+            primary_ad_channels: extractedData.primary_ad_channels || null,
+            content_strategy: extractedData.content_strategy || null,
+            influencer_marketing: extractedData.influencer_marketing || false,
+            target_location: extractedData.target_location || null,
+          },
+        },
+      };
+
+      try {
+        const hasuraResponse = await axios.post(
+          HASURA_GRAPHQL_URL,
+          hasuraPayload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "x-hasura-admin-secret": HASURA_ADMIN_SECRET, // Use your Hasura admin secret
+            },
+          }
+        );
+
+        console.log("Hasura response:", hasuraResponse.data);
+
+        if (hasuraResponse.data.errors) {
+          throw new Error(JSON.stringify(hasuraResponse.data.errors));
+        }
+
+        const insertedId = hasuraResponse.data.data.insert_businesses_one.id;
+
+        return res.json({
+          message: "Document processed and data inserted successfully",
+          businessId: insertedId,
+          response: extractedData,
+        });
+      } catch (hasuraError) {
+        console.error("Hasura mutation error:", hasuraError.message);
+        return res
+          .status(500)
+          .json({ error: "Failed to insert data into Hasura" });
+      }
     }
 
     // **Using OpenAI (Upload document first)**

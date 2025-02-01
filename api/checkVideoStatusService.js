@@ -3,13 +3,24 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
+const { initializeApp } = require("firebase/app");
+const {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+} = require("firebase/storage");
+const firebaseConfig = require("./firebase.config");
 
 const router = express.Router();
 const API_KEY = process.env.HEYGEN_API_KEY || "<your-api-key>";
 
+const firebaseApp = initializeApp(firebaseConfig);
+const storage = getStorage(firebaseApp);
+
 /**
  * GET /check-video-status/:videoId
- * Checks if the video is ready and saves it if completed.
+ * Checks if the video is ready, saves it locally, and uploads to Firebase Storage.
  */
 router.get("/check-video-status/:videoId", async (req, res) => {
   try {
@@ -30,7 +41,7 @@ router.get("/check-video-status/:videoId", async (req, res) => {
 
     const status = statusResponse.data.data.status;
 
-    console.log("status response:", statusResponse);
+    console.log("status response:", statusResponse.data);
 
     if (status === "completed") {
       const videoUrl = statusResponse.data.data.video_url;
@@ -39,23 +50,53 @@ router.get("/check-video-status/:videoId", async (req, res) => {
       const videoResponse = await axios.get(videoUrl, {
         responseType: "stream",
       });
-      const videosDir = path.join(__dirname, "videos");
 
+      // Ensure the local "videos" directory exists
+      const videosDir = path.join(__dirname, "videos");
       if (!fs.existsSync(videosDir)) {
         fs.mkdirSync(videosDir, { recursive: true });
       }
 
       const localFilePath = path.join(videosDir, `${videoId}.mp4`);
       const writer = fs.createWriteStream(localFilePath);
-
       videoResponse.data.pipe(writer);
 
-      writer.on("finish", () => {
-        console.log(`Video saved: ${localFilePath}`);
-        return res.json({
-          message: "Video is ready and saved locally",
-          videoPath: localFilePath,
-        });
+      writer.on("finish", async () => {
+        console.log(`Video saved locally: ${localFilePath}`);
+
+        // Upload to Firebase Storage
+        const storageRef = ref(storage, `videos/${videoId}.mp4`);
+        const videoBuffer = fs.readFileSync(localFilePath);
+        const metadata = { contentType: "video/mp4" };
+
+        const uploadTask = uploadBytesResumable(
+          storageRef,
+          videoBuffer,
+          metadata
+        );
+
+        uploadTask
+          .then(async (snapshot) => {
+            console.log("Video uploaded to Firebase Storage");
+
+            // Get the public download URL
+            const firebaseVideoUrl = await getDownloadURL(snapshot.ref);
+            console.log(`Firebase Video URL: ${firebaseVideoUrl}`);
+
+            // Delete local file after successful upload
+            fs.unlinkSync(localFilePath);
+
+            return res.json({
+              message: "Video is ready and uploaded to Firebase",
+              videoUrl: firebaseVideoUrl,
+            });
+          })
+          .catch((uploadError) => {
+            console.error("Upload error:", uploadError);
+            return res
+              .status(500)
+              .json({ error: "Error uploading video to Firebase" });
+          });
       });
 
       writer.on("error", (err) => {
@@ -80,4 +121,4 @@ router.get("/check-video-status/:videoId", async (req, res) => {
   }
 });
 
-module.exports = router; // ✅ Ensure correct export
+module.exports = router;

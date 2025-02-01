@@ -1,8 +1,11 @@
 module.exports = {
-  apiKey: "AIzaSyA0bksP3mhhp5idAgjUnSzwCImF1AGIl_c",
-  authDomain: "datathon2025-5b711.firebaseapp.com",
-  projectId: "datathon2025-5b711",
-  storageBucket: "datathon2025-5b711.firebasestorage.app",
-  messagingSenderId: "760497199890",
-  appId: "1:760497199890:web:730bc15adbd3082ffbb1cb",
+  apiKey: "AIzaSyB_k8huWepobUHQs2WqlCUI8Lh514MS7D8",
+  authDomain: "garuda-d278e.firebaseapp.com",
+  databaseURL:
+    "https://garuda-d278e-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "garuda-d278e",
+  storageBucket: "garuda-d278e.appspot.com",
+  messagingSenderId: "47109051213",
+  appId: "1:47109051213:web:52623029ae20e10a319d04",
+  measurementId: "G-S8MXY4VF05",
 };
