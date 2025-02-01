@@ -117,20 +117,43 @@ app.post("/api/post-tweet", async (req, res) => {
 });
 
 app.post("/api/post-instagram", async (req, res) => {
+  const { imageUrl, caption } = req.body;
+
+  // Log the incoming request body
+  console.log("Received request body:", req.body);
+
+  if (!imageUrl || !caption) {
+    return res.status(400).json({ error: "Image URL and caption are required." });
+  }
+
   try {
-    await postToInsta();
+    // Log the imageUrl and caption before calling postToInsta
+    console.log("Image URL:", imageUrl);
+    console.log("Caption:", caption);
+
+    await postToInsta(imageUrl, caption); // Call the function with parameters
     res.json({ message: "Post uploaded to Instagram successfully." });
   } catch (error) {
+    console.error("Error posting to Instagram:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
 app.post("/api/post-video-instagram", async (req, res) => {
+  const { videoUrl, coverUrl, caption } = req.body;
+
+  // Log the incoming request body
+  console.log("Received request body:", req.body);
+
+  if (!videoUrl || !coverUrl || !caption) {
+    return res.status(400).json({ error: "Video URL, cover URL, and caption are required." });
+  }
+
   try {
-    const { videoUrl, caption } = req.body;
-    await postVideoToInsta(videoUrl, caption);
-    res.json({ message: "Video post uploaded to Instagram successfully." });
+    const publishResult = await postVideoToInsta(videoUrl, coverUrl, caption); // Call the function with parameters
+    res.json({ message: "Video uploaded to Instagram successfully.", publishResult });
   } catch (error) {
+    console.error("Error posting video to Instagram:", error);
     res.status(500).json({ error: error.message });
   }
 });
