@@ -82,26 +82,22 @@ router.post("/generate-funnel-flow", async (req, res) => {
 
     console.log("Business data retrieved:", businessData);
 
-    const prompt = `Given the following business data, generate a structured marketing funnel flow that outlines steps from awareness to conversion.
+    const prompt = `Given the following business data, generate a structured marketing funnel flow that outlines steps from awareness to conversion. Ensure that you are giving the possible ideas and proposed solutions. Generate a JSON File for this.
+ 
 
 Business Data:
 ${JSON.stringify(businessData, null, 2)}
 
-### Funnel Flow Output:
-- Awareness Stage:
-  - Suggested strategies
-  - Best platforms to use
-- Consideration Stage:
-  - Recommended engagement techniques
-  - Content ideas
-- Conversion Stage:
-  - Suggested CTAs and offers
-  - Retargeting strategies
-- Retention Stage:
-  - Customer loyalty tactics
-  - Long-term engagement methods
 
-Ensure that the funnel flow is aligned with the business's industry, target audience, and existing marketing channels. Return the final structured data in valid JSON format.`;
+For the funnel output flow:
+
+Firstly, classify which leverage requires more attention: Media Leverage, Capital Leverage, Labour Leverage, Code Leverage. 
+
+On the basis of this, identify channels where processes can be streamlined and improvised such that digital marketing campaigns are targeted to the relevant audience more effectively. Consider the opportunities with regards to paid advertisements, content and outreach. Identify areas for good lead magnet implementation with probable use cases and examples. Split them into different stages such as awareness, consideration, conversion, and retention stages with suggestions aligning with the business practices and strategies. 
+
+When suggesting best platforms, give at most 3, and give reasons for the same. Ensure that they are aligning with the userbase and target audience. 
+
+Finally, Ensure that the funnel flow is aligned with the industry processes, target audience and existing marketing channels. Return the final structure in a valid JSON Format.`;
 
     let aiResponse;
 
