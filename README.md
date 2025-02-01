@@ -1,2 +1,2 @@
 # adbaba
-THE Baba—your marketing ka asli guru, guiding you to success!
+AdBaba ko lagao, apna dhandha upar uthao
