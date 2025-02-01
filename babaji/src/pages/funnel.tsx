@@ -7,13 +7,6 @@ export default function Funnel() {
   return (
     <div>
       <h2>Business Data</h2>
-      <ul>
-        {data?.businesses?.map((biz, index) => (
-          <li key={index}>
-            <strong>Description:</strong> {biz.description}
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

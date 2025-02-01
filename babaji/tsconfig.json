@@ -8,7 +8,7 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": "./",
     "paths": {
-      "@typings/gql": ["types/gql"]
+      "@typings/gql": ["types/gql/index"]
     },
     "noEmit": true
   },
