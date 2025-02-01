@@ -6,7 +6,7 @@
     "strict": true,
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
-    "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
       "@typings/gql": ["types/gql/index"]
     },

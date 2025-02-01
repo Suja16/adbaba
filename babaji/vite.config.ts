@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@typings/gql": path.resolve(__dirname, "types/gql"),
+      "@typings/gql": path.resolve(__dirname, "types/gql/index.js"),
     },
   },
 });
