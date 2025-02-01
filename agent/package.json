@@ -13,7 +13,9 @@
     "axios": "^1.7.9",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "instagram-private-api": "^1.46.1",
     "node-fetch": "^3.3.2",
+    "request-promise": "^4.2.6",
     "twit": "^2.2.11",
     "twitter-api-v2": "^1.19.0"
   }
