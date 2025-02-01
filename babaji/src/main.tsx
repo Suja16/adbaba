@@ -1,8 +1,8 @@
 import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
 import App from "./App";
 import { ThemeProvider } from "@emotion/react";
 import theme from "./theme";
+import ReactDOM from "react-dom/client";
 
 import { createHttpLink } from "@apollo/client";
 
@@ -35,7 +35,7 @@ function makeClient() {
 
 const client = makeClient();
 
-createRoot(document.getElementById("root")!).render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider theme={theme}>
       <ApolloProvider client={client}>

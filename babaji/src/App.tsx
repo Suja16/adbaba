@@ -1,12 +1,13 @@
-import { Box, Typography } from "@mui/material";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Funnel from "./pages/funnel";
 
 function App() {
   return (
-    <Box>
-      <Typography color="primary" variant="h1">
-        BABA JI ka THULU!
-      </Typography>
-    </Box>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Funnel />} />
+      </Routes>
+    </Router>
   );
 }
 
