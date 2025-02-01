@@ -191,9 +191,103 @@ Finally, Ensure that the funnel flow is aligned with the industry processes, tar
       return res.status(500).json({ error: "Failed to parse AI response." });
     }
 
+    // Second AI call to generate visualization
+    const visualizationPrompt = {
+      role: "system",
+      content: `You are a data visualization expert. Convert the following marketing funnel data into a ReactFlow graph structure. 
+      Create nodes and edges that represent the hierarchical relationship between different elements.
+      
+      Rules:
+      1. Each node must have unique id, position (x,y coordinates), and data properties
+      2. Root node should be "Marketing Funnel" at the top
+      3. Connect nodes using edges with unique ids
+      4. Maintain clear visual hierarchy
+      5. Return only valid JSON with 'nodes' and 'edges' arrays
+      6. Use consistent spacing between nodes
+      7. Position nodes to avoid overlapping
+      
+      Structure the nodes in this hierarchy:
+      - Marketing Funnel (root)
+        - Leverage Types (Media, Capital, Labor, Code)
+          - Specific Strategies
+            - Funnel Stages (Awareness, Consideration, etc.)
+      
+      Here's the funnel data to visualize: ${JSON.stringify(funnelFlowData)}`,
+    };
+
+    const visualizationMessages = [
+      visualizationPrompt,
+      {
+        role: "user",
+        content:
+          "Generate the ReactFlow visualization data following the specified structure.",
+      },
+    ];
+
+    let flowResponse;
+
+    if (IS_OLLAMA) {
+      const flowOllamaResponse = await axios.post(
+        "http://localhost:11434/api/generate",
+        {
+          model: "llama3",
+          prompt: visualizationPrompt,
+          stream: false,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      flowResponse = flowOllamaResponse.data.response;
+    } else if (IS_GEMINI) {
+      const flowGeminiResponse = await axios.post(
+        `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: visualizationPrompt }],
+            },
+          ],
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      flowResponse =
+        flowGeminiResponse.data.candidates[0]?.content?.parts[0]?.text;
+    } else {
+      const flowOpenAiResponse = await axios.post(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          model: "gpt-3.5-turbo",
+          messages: visualizationMessages,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      flowResponse = flowOpenAiResponse.data.choices[0]?.message?.content;
+    }
+
+    let flowData;
+    try {
+      const cleanedFlowResponse = flowResponse
+        .replace(/```json|```/g, "")
+        .trim();
+      flowData = JSON.parse(cleanedFlowResponse);
+    } catch (parseError) {
+      console.error("Error parsing flow response:", parseError.message);
+      return res.status(500).json({ error: "Failed to parse flow response." });
+    }
+
     return res.json({
       message: "Funnel flow generated successfully",
       response: funnelFlowData,
+      flowData: flowData,
     });
   } catch (error) {
     console.error(
