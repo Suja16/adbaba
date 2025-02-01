@@ -4,7 +4,7 @@ const path = require("path");
 const axios = require("axios");
 const { generateTweetText } = require("./services/generateTweet.js");
 const { postTweet } = require("./services/postTweet.js");
-const { postToInsta } = require("./services/instagram.js");
+const { postToInsta, postVideoToInsta } = require("./services/instagram.js");
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -125,6 +125,16 @@ app.post("/api/post-instagram", async (req, res) => {
   }
 });
 
+app.post("/api/post-video-instagram", async (req, res) => {
+  try {
+    const { videoUrl, caption } = req.body;
+    await postVideoToInsta(videoUrl, caption);
+    res.json({ message: "Video post uploaded to Instagram successfully." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port http://localhost:${PORT}`);
 });
