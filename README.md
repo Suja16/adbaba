@@ -37,3 +37,5 @@ Video Id: 4dc3e3d34986490f99689d93824fb633
   "target_location": ["Global", "U.S.", "Western Europe", "China", "Brazil"]
 }
 ```
+
+AI Video: https://firebasestorage.googleapis.com/v0/b/garuda-d278e.appspot.com/o/videos%2F9b080fce0805440e854881dbf7a41a5a.mp4?alt=media&token=e33e47be-673a-4a5f-920a-a0d5bba1002d
