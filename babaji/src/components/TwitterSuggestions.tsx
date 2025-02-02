@@ -1,10 +1,13 @@
 import { Image, ThumbDown, ThumbUp } from "@mui/icons-material";
 import {
+  Box,
   Button,
   Card,
   CardActions,
   CardContent,
+  LinearProgress,
   TextField,
+  Typography,
 } from "@mui/material";
 import axios from "axios";
 import { enqueueSnackbar } from "notistack";
@@ -19,10 +22,13 @@ interface Tweet {
 export default function TwitterSuggestions({ bId }: { bId: string }) {
   const [prompt, setPrompt] = useState("");
   const [tweets, setTweets] = useState<Tweet[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!bId) return;
     const fetchTweets = async () => {
       try {
+        setLoading(true);
         console.log("Fetching tweets for bId:", bId);
 
         const response = await axios.get(
@@ -38,6 +44,8 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
         setTweets(exampleTweets);
       } catch (error) {
         console.error("Error fetching tweets:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -46,7 +54,7 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
 
   const handleAccept = async (id: number) => {
     try {
-      await axios.post(`http://localhost:3002/api/post-tweet`, {
+      await axios.post(`${import.meta.env.VITE_API}/api/post-tweet`, {
         tweetText: tweets.find((tweet) => tweet.id === id)?.content,
       });
       console.log("Tweet accepted and posted!");
@@ -59,7 +67,6 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
   };
 
   const handleReject = (id: number) => {
-    alert(`Tweet ${id} rejected!`);
     const newTweets = tweets.filter((tweet) => tweet.id !== id);
     setTweets(newTweets);
   };
@@ -68,26 +75,32 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
     if (!prompt) {
       return;
     }
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `http://localhost:3002/api/generate-tweet/${bId}`,
+        {
+          timeout: 100000,
+        }
+      );
+      console.log(response.data);
 
-    const response = await axios.get(
-      `http://localhost:3002/api/generate-tweet/${bId}`,
-      {
-        timeout: 100000,
-      }
-    );
-    console.log(response.data);
-
-    const newTweet: Tweet = {
-      id: tweets.length + 1,
-      content: response.data.tweetText,
-      hasMedia: false,
-    };
-    setTweets([...tweets, newTweet]);
-    setPrompt("");
+      const newTweet: Tweet = {
+        id: tweets.length + 1,
+        content: response.data.tweetText,
+        hasMedia: false,
+      };
+      setTweets([...tweets, newTweet]);
+      setPrompt("");
+    } catch (error) {
+      console.error("Error generating new suggestion:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div style={{ maxWidth: "600px", margin: "auto", padding: "16px" }}>
+    <div style={{ maxWidth: "80vw", margin: "auto", padding: "16px" }}>
       <div style={{ marginBottom: "24px", display: "flex", gap: "8px" }}>
         <TextField
           fullWidth
@@ -100,6 +113,24 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
           Generate
         </Button>
       </div>
+      {loading && (
+        <Box
+          sx={{
+            width: "100%",
+            height: "50vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Box>
+            <Typography variant="h6" align="center" gutterBottom>
+              Social Media Agent Generating Tweets...
+            </Typography>
+            <LinearProgress />
+          </Box>
+        </Box>
+      )}
       <div style={{ display: "grid", gap: "16px" }}>
         {tweets.map((tweet) => (
           <Card

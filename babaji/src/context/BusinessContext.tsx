@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, ReactNode, useContext, useState } from "react";
 
 interface BusinessContextType {
   businessId: string | null;
@@ -10,7 +10,9 @@ const BusinessContext = createContext<BusinessContextType | undefined>(
 );
 
 export function BusinessProvider({ children }: { children: ReactNode }) {
-  const [businessId, setBusinessId] = useState<string | null>(null);
+  const [businessId, setBusinessId] = useState<string | null>(
+    "8e246e2f-6558-4e66-830f-30414224f64c"
+  );
 
   return (
     <BusinessContext.Provider value={{ businessId, setBusinessId }}>
