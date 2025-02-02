@@ -105,14 +105,29 @@ app.get("/api/generate-tweet/:id", async (req, res) => {
 });
 
 app.post("/api/post-tweet", async (req, res) => {
-  const { tweetText } = req.body;
-  const mediaFilePath = path.join(__dirname, "images.png");
+  const { tweetText, imageUrl } = req.body; // Accept imageUrl in the request body
+
+  let mediaFilePath = null;
 
   try {
+    // If an image URL is provided, download the image
+    if (imageUrl) {
+      const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+      const mediaData = Buffer.from(response.data, 'binary');
+      mediaFilePath = `uploads/${Date.now()}.jpg`; // Save the image with a unique name
+      fs.writeFileSync(mediaFilePath, mediaData); // Write the image to the filesystem
+    }
+
     await postTweet(tweetText, mediaFilePath);
     res.json({ message: "Tweet posted successfully." });
   } catch (error) {
+    console.error("Error posting tweet:", error);
     res.status(500).json({ error: error.message });
+  } finally {
+    // Clean up the uploaded image file if it was created
+    if (mediaFilePath) {
+      fs.unlinkSync(mediaFilePath); // Remove the file after posting
+    }
   }
 });
 

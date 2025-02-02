@@ -1,20 +1,19 @@
-// require("dotenv").config();
-const { twitterClient } = require("./twitterClient.js");
 const fs = require("fs");
-const path = require("path");
+const { twitterClient } = require("./twitterClient.js");
 
 async function postTweet(tweetText, mediaFilePath) {
   try {
-    const mediaData = fs.readFileSync(mediaFilePath);
-    const mimeType = 'image/jpeg';
+    let mediaId;
+    if (mediaFilePath) {
+      const mediaData = fs.readFileSync(mediaFilePath);
+      const mimeType = 'image/jpeg'; // Adjust this if you expect different image types
 
-    const mediaId = await twitterClient.v1.uploadMedia(mediaData, {mimeType});
+      mediaId = await twitterClient.v1.uploadMedia(mediaData, { mimeType });
+    }
 
     const response = await twitterClient.v2.tweet({
       text: tweetText,
-      media: {
-        media_ids: [mediaId]
-      }
+      media: mediaId ? { media_ids: [mediaId] } : undefined // Only include media if mediaId is defined
     });
     console.log("✅ Tweet posted:", response);
   } catch (error) {
