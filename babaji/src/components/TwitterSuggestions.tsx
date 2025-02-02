@@ -37,9 +37,9 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
             timeout: 100000,
           }
         );
-        console.log(response.data);
+        console.log(response.data.tweetText.tweetContent);
 
-        const tweetText = response.data.tweetText;
+        const tweetText = response.data.tweetText.tweetContent;
         const exampleTweets = [{ id: 1, content: tweetText, hasMedia: false }];
         setTweets(exampleTweets);
       } catch (error) {
@@ -54,7 +54,7 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
 
   const handleAccept = async (id: number) => {
     try {
-      await axios.post(`${import.meta.env.VITE_API}/api/post-tweet`, {
+      await axios.post(`http://localhost:3002/api/post-tweet`, {
         tweetText: tweets.find((tweet) => tweet.id === id)?.content,
       });
       console.log("Tweet accepted and posted!");
@@ -67,12 +67,13 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
   };
 
   const handleReject = (id: number) => {
+    alert(`Tweet ${id} rejected!`);
     const newTweets = tweets.filter((tweet) => tweet.id !== id);
     setTweets(newTweets);
   };
 
   const generateNewSuggestion = async () => {
-    if (!prompt || !bId || loading) {
+    if (!prompt) {
       return;
     }
     setLoading(true);
@@ -87,7 +88,7 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
 
       const newTweet: Tweet = {
         id: tweets.length + 1,
-        content: response.data.tweetText,
+        content: response?.data?.tweetText?.tweetContent,
         hasMedia: false,
       };
       setTweets([...tweets, newTweet]);
@@ -124,13 +125,7 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
           }}
         >
           <Box>
-            <Typography
-              variant="h6"
-              align="center"
-              sx={{
-                marginBottom: "24px",
-              }}
-            >
+            <Typography variant="h6" align="center" gutterBottom>
               Social Media Agent Generating Tweets...
             </Typography>
             <LinearProgress />

@@ -12,9 +12,60 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "<your-openai-key>";
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "<your-gemini-key>";
 const IS_OLLAMA = process.env.IS_OLLAMA === "true";
 const IS_GEMINI = process.env.IS_GEMINI === "true";
+// **Proceed with Hasura Mutation**
+const HASURA_GRAPHQL_URL = "https://datathon2025.hasura.app/v1/graphql";
+const HASURA_ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET;
 
 // Configure Multer for file uploads
 const upload = multer({ dest: "uploads/" });
+
+async function insertTweetSuggestion(tweetData) {
+  const mutationQuery = `
+    mutation MyMutation($object: tweet_suggestions_insert_input!) {
+      insert_tweet_suggestions_one(object: $object) {
+        id
+      }
+    }
+  `;
+
+  const variables = {
+    object: {
+      business_id: tweetData.business_id || "",
+      caption: tweetData.caption || "",
+      script: tweetData.script || "",
+      video_id: tweetData.video_id || "",
+    },
+  };
+
+  try {
+    const response = await axios.post(
+      HASURA_GRAPHQL_URL,
+      {
+        query: mutationQuery,
+        variables,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-hasura-admin-secret": HASURA_ADMIN_SECRET,
+        },
+      }
+    );
+
+    if (response.data.errors) {
+      throw new Error(JSON.stringify(response.data.errors));
+    }
+
+    console.log(
+      "Inserted tweet suggestion ID:",
+      response.data.data.insert_tweet_suggestions_one.id
+    );
+    return response.data.data.insert_tweet_suggestions_one;
+  } catch (error) {
+    console.error("❌ Error inserting tweet suggestion:", error.message);
+    return { error: "Failed to insert tweet suggestion" };
+  }
+}
 
 /**
  * POST /process-document
@@ -173,16 +224,36 @@ Based on this document, extract and structure relevant data into the following J
         return res.status(500).json({ error: "Failed to parse AI response." });
       }
 
-      // **Proceed with Hasura Mutation**
-      const HASURA_GRAPHQL_URL = "https://datathon2025.hasura.app/v1/graphql";
-      const HASURA_ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET;
-
       const mutationQuery = `
-    mutation MyMutation($object: businesses_insert_input!) {
-      insert_businesses_one(object: $object) {
-        id
-      }
-    }
+mutation MyMutation($object: businesses_insert_input!) {
+  insert_businesses_one(object: $object) {
+    id
+    ad_spend_distribution
+    business_size
+    content_strategy
+    customer_acquisition_cost
+    customer_behavior
+    customer_interests
+    customer_lifetime_value
+    description
+    email_subscribers
+    founded_year
+    hq_location
+    industry
+    influencer_marketing
+    marketing_budget
+    name
+    primary_ad_channels
+    seo_rank
+    social_followers
+    social_media_channels
+    target_age_group
+    target_gender
+    target_location
+    website
+    website_traffic
+  }
+}
   `;
 
       const hasuraPayload = {
@@ -239,7 +310,37 @@ Based on this document, extract and structure relevant data into the following J
         }
 
         const insertedId = hasuraResponse.data.data.insert_businesses_one.id;
+        try {
+          const tweetResponse = await axios.get(
+            "http://localhost:3002/api/generate-tweet/" +
+              insertedId +
+              "?hasMedia=true"
+          );
+          console.log(tweetResponse);
 
+          const videoResponse = await axios.post(
+            "http://localhost:3000/generate-video",
+            {
+              dialogue: tweetResponse.data.tweetText.dialogue,
+            }
+          );
+          if (videoResponse.data?.videoId) {
+            console.log("Video ID:", videoResponse.data.videoId);
+
+            try {
+              await insertTweetSuggestion({
+                business_id: insertedId,
+                caption: tweetResponse.data.tweetText.caption,
+                script: tweetResponse.data.tweetText.dialogue,
+                video_id: videoResponse.data?.videoId,
+              });
+            } catch (error) {
+              console.error("Unable to insert tweet suggestion");
+            }
+          }
+        } catch (error) {
+          console.log("error:", error);
+        }
         return res.json({
           message: "Document processed and data inserted successfully",
           businessId: insertedId,

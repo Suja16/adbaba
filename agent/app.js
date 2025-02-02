@@ -24,6 +24,7 @@ app.use(bodyParser.json());
  */
 app.get("/api/generate-tweet/:id", async (req, res) => {
   const { id } = req.params;
+  const { hasMedia } = req.query;
 
   if (!id) {
     return res.status(400).json({ error: "Business ID is required." });
@@ -97,7 +98,7 @@ app.get("/api/generate-tweet/:id", async (req, res) => {
     }
 
     // Generate Tweet Text
-    const tweetText = await generateTweetText(businessData);
+    const tweetText = await generateTweetText(businessData, hasMedia);
     if (tweetText) {
       res.json({ tweetText });
     } else {

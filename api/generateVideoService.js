@@ -13,6 +13,8 @@ router.post("/generate-video", async (req, res) => {
   try {
     const { dialogue } = req.body;
 
+    console.log("Starting to generate video");
+
     if (!dialogue || typeof dialogue !== "string") {
       return res
         .status(400)
@@ -56,6 +58,8 @@ router.post("/generate-video", async (req, res) => {
     );
 
     const videoId = generateResponse.data.data.video_id;
+    console.log(videoId);
+
     if (!videoId) {
       return res
         .status(500)
