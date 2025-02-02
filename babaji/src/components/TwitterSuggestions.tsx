@@ -7,6 +7,7 @@ import {
   TextField,
 } from "@mui/material";
 import axios from "axios";
+import { enqueueSnackbar } from "notistack";
 import { useEffect, useState } from "react";
 
 interface Tweet {
@@ -33,10 +34,7 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
         console.log(response.data);
 
         const tweetText = response.data.tweetText;
-        const exampleTweets = [
-          { id: 1, content: tweetText, hasMedia: Math.random() > 0.5 },
-          { id: 2, content: tweetText, hasMedia: Math.random() > 0.5 },
-        ];
+        const exampleTweets = [{ id: 1, content: tweetText, hasMedia: false }];
         setTweets(exampleTweets);
       } catch (error) {
         console.error("Error fetching tweets:", error);
@@ -46,8 +44,19 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
     fetchTweets();
   }, [bId]);
 
-  const handleAccept = (id: number) => {
+  const handleAccept = async (id: number) => {
     alert(`Tweet ${id} accepted!`);
+    try {
+      await axios.post(`http://localhost:3002/api/post-tweet`, {
+        tweetText: tweets.find((tweet) => tweet.id === id)?.content,
+      });
+      console.log("Tweet accepted and posted!");
+      enqueueSnackbar("Tweet accepted and posted!", { variant: "success" });
+      const newTweets = tweets.filter((tweet) => tweet.id !== id);
+      setTweets(newTweets);
+    } catch (error) {
+      console.error("Error accepting tweet:", error);
+    }
   };
 
   const handleReject = (id: number) => {
