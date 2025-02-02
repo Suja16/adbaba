@@ -11,21 +11,83 @@ const IS_GEMINI = process.env.IS_GEMINI === "true";
 const HASURA_GRAPHQL_URL = "https://datathon2025.hasura.app/v1/graphql";
 const HASURA_ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET;
 
-/**
- * POST /generate-funnel-flow
- * Accepts a businessId and generates a marketing funnel flow using AI.
- */
-router.post("/generate-funnel-flow", async (req, res) => {
-  console.log("Generating funnel flow...");
+// Helper function to clean and parse JSON response
+const parseAIResponse = (response) => {
+  try {
+    // If response is already an object, return it
+    if (typeof response === "object") return response;
 
+    // Try to extract JSON from the string response
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    return response;
+  } catch (error) {
+    console.warn("Failed to parse AI response as JSON:", error);
+    return response;
+  }
+};
+
+// Helper function to generate the marketing funnel prompt
+const generateMarketingFunnelPrompt = (businessData) => {
+  return `Given the following business data, generate a structured marketing funnel flow that outlines steps from awareness to conversion. Ensure that you are giving the possible ideas and proposed solutions. Generate a JSON File for this.
+
+Business_Data:
+${JSON.stringify(businessData, null, 2)}
+
+For the funnel output flow:
+
+1. Classify which leverage requires more attention: Media Leverage, Capital Leverage, Labour Leverage, Code Leverage.
+2. Identify channels where processes can be streamlined and improvised for effective digital marketing campaigns.
+3. Consider opportunities in paid advertisements, content, and outreach.
+4. Identify areas for good lead magnet implementation with probable use cases and examples.
+5. Split into stages: awareness, consideration, conversion, and retention.
+6. Suggest maximum 3 best platforms with reasoning aligned to the target audience.
+7. Ensure alignment with industry processes and existing marketing channels.
+
+Return the response in valid JSON format with the following structure:
+{
+  "leverage_analysis": {},
+  "marketing_channels": {},
+  "funnel_stages": {},
+  "platform_recommendations": {}
+}`;
+};
+
+// Helper function to generate visualization prompt
+const generateVisualizationPrompt = (funnelData) => {
+  return `Create a ReactFlow visualization for this marketing funnel data. Follow these rules:
+
+1. Create a hierarchical structure with nodes and edges
+2. Include these required properties for nodes:
+   - id (unique string)
+   - position (x, y coordinates)
+   - data (label and any additional info)
+3. Root node should be "Marketing Funnel"
+4. Use clear visual hierarchy and consistent spacing
+5. Return valid JSON with 'nodes' and 'edges' arrays
+
+Funnel data to visualize: ${JSON.stringify(funnelData)}
+
+Expected structure:
+{
+  "nodes": [
+    { "id": "string", "position": { "x": number, "y": number }, "data": { "label": "string" } }
+  ],
+  "edges": [
+    { "id": "string", "source": "string", "target": "string" }
+  ]
+}`;
+};
+
+router.post("/generate-funnel-flow", async (req, res) => {
   try {
     const { businessId } = req.body;
 
     if (!businessId) {
       return res.status(400).json({ error: "Missing businessId in request." });
     }
-
-    console.log("Fetching business data for:", businessId);
 
     // Fetch business data from Hasura
     const query = `
@@ -80,188 +142,48 @@ router.post("/generate-funnel-flow", async (req, res) => {
       return res.status(404).json({ error: "Business not found" });
     }
 
-    console.log("Business data retrieved:", businessData);
+    // Generate marketing funnel using selected AI service
+    let funnelResponse;
+    const marketingPrompt = generateMarketingFunnelPrompt(businessData);
 
-    const prompt = `Given the following business data, generate a structured marketing funnel flow that outlines steps from awareness to conversion. Ensure that you are giving the possible ideas and proposed solutions. Generate a JSON File for this.
- 
-
-Business Data:
-${JSON.stringify(businessData, null, 2)}
-
-
-For the funnel output flow:
-
-Firstly, classify which leverage requires more attention: Media Leverage, Capital Leverage, Labour Leverage, Code Leverage. 
-
-On the basis of this, identify channels where processes can be streamlined and improvised such that digital marketing campaigns are targeted to the relevant audience more effectively. Consider the opportunities with regards to paid advertisements, content and outreach. Identify areas for good lead magnet implementation with probable use cases and examples. Split them into different stages such as awareness, consideration, conversion, and retention stages with suggestions aligning with the business practices and strategies. 
-
-When suggesting best platforms, give at most 3, and give reasons for the same. Ensure that they are aligning with the userbase and target audience. 
-
-Finally, Ensure that the funnel flow is aligned with the industry processes, target audience and existing marketing channels. Return the final structure in a valid JSON Format.`;
-
-    let aiResponse;
-
-    console.log("IS_OLLAMA:", IS_OLLAMA);
-    console.log("IS_GEMINI:", IS_GEMINI);
-
-    // **Using Ollama**
     if (IS_OLLAMA) {
-      console.log("Using Ollama AI...");
-      const ollamaPayload = {
-        model: "llama3",
-        prompt,
-        stream: false,
-      };
-
       const ollamaResponse = await axios.post(
-        "https://7e38-2402-3a80-6d7-98aa-517d-394b-57f-3960.ngrok-free.app/api/generate",
-        ollamaPayload,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-
-      aiResponse = ollamaResponse.data.response || ollamaResponse.data.text;
-      console.log("Ollama response:", aiResponse);
-    }
-
-    // **Using Gemini API**
-    else if (IS_GEMINI) {
-      console.log("Using Gemini AI...");
-      const geminiPayload = {
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: prompt }],
-          },
-        ],
-      };
-
-      const geminiResponse = await axios.post(
-        `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
-        geminiPayload,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-
-      aiResponse = geminiResponse.data.candidates[0]?.content?.parts[0]?.text;
-      console.log("Gemini response:", aiResponse);
-    }
-
-    // **Using OpenAI**
-    else {
-      console.log("Using OpenAI...");
-      const openAiPayload = {
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert in marketing funnel strategies.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-      };
-
-      const openAiResponse = await axios.post(
-        "https://api.openai.com/v1/chat/completions",
-        openAiPayload,
-        {
-          headers: {
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      aiResponse = openAiResponse.data.choices[0]?.message?.content;
-      console.log("OpenAI response:", aiResponse);
-    }
-
-    // **Fix: Clean up AI response before parsing JSON**
-    let funnelFlowData;
-    try {
-      const cleanedResponse = aiResponse.replace(/```json|```/g, "").trim();
-      funnelFlowData = JSON.parse(cleanedResponse);
-    } catch (parseError) {
-      console.error("Error parsing AI response:", parseError.message);
-      return res.status(500).json({ error: "Failed to parse AI response." });
-    }
-
-    // Second AI call to generate visualization
-    const visualizationPrompt = {
-      role: "system",
-      content: `You are a data visualization expert. Convert the following marketing funnel data into a ReactFlow graph structure. 
-      Create nodes and edges that represent the hierarchical relationship between different elements.
-      
-      Rules:
-      1. Each node must have unique id, position (x,y coordinates), and data properties
-      2. Root node should be "Marketing Funnel" at the top
-      3. Connect nodes using edges with unique ids
-      4. Maintain clear visual hierarchy
-      5. Return only valid JSON with 'nodes' and 'edges' arrays
-      6. Use consistent spacing between nodes
-      7. Position nodes to avoid overlapping
-      
-      Structure the nodes in this hierarchy:
-      - Marketing Funnel (root)
-        - Leverage Types (Media, Capital, Labor, Code)
-          - Specific Strategies
-            - Funnel Stages (Awareness, Consideration, etc.)
-      
-      Here's the funnel data to visualize: ${JSON.stringify(funnelFlowData)}`,
-    };
-
-    const visualizationMessages = [
-      visualizationPrompt,
-      {
-        role: "user",
-        content:
-          "Generate the ReactFlow visualization data following the specified structure.",
-      },
-    ];
-
-    let flowResponse;
-
-    if (IS_OLLAMA) {
-      const flowOllamaResponse = await axios.post(
-        "https://7e38-2402-3a80-6d7-98aa-517d-394b-57f-3960.ngrok-free.app/api/generate",
+        "http://localhost:11434/api/generate",
         {
           model: "llama3",
-          prompt: visualizationPrompt,
+          prompt: marketingPrompt,
           stream: false,
-        },
-        {
-          headers: { "Content-Type": "application/json" },
         }
       );
-      flowResponse = flowOllamaResponse.data.response;
+      funnelResponse = ollamaResponse.data.response;
     } else if (IS_GEMINI) {
-      const flowGeminiResponse = await axios.post(
+      const geminiResponse = await axios.post(
         `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
         {
           contents: [
             {
-              role: "user",
-              parts: [{ text: visualizationPrompt }],
+              parts: [{ text: marketingPrompt }],
             },
           ],
-        },
-        {
-          headers: { "Content-Type": "application/json" },
         }
       );
-      flowResponse =
-        flowGeminiResponse.data.candidates[0]?.content?.parts[0]?.text;
+      funnelResponse =
+        geminiResponse.data.candidates[0]?.content?.parts[0]?.text;
     } else {
-      const flowOpenAiResponse = await axios.post(
+      const openAiResponse = await axios.post(
         "https://api.openai.com/v1/chat/completions",
         {
           model: "gpt-3.5-turbo",
-          messages: visualizationMessages,
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert in marketing funnel strategies.",
+            },
+            {
+              role: "user",
+              content: marketingPrompt,
+            },
+          ],
         },
         {
           headers: {
@@ -270,31 +192,82 @@ Finally, Ensure that the funnel flow is aligned with the industry processes, tar
           },
         }
       );
-      flowResponse = flowOpenAiResponse.data.choices[0]?.message?.content;
+      funnelResponse = openAiResponse.data.choices[0]?.message?.content;
     }
 
-    let flowData;
-    try {
-      const cleanedFlowResponse = flowResponse
-        .replace(/```json|```/g, "")
-        .trim();
-      flowData = JSON.parse(cleanedFlowResponse);
-    } catch (parseError) {
-      console.error("Error parsing flow response:", parseError.message);
-      return res.status(500).json({ error: "Failed to parse flow response." });
+    const parsedFunnelResponse = parseAIResponse(funnelResponse);
+
+    // Generate visualization data
+    let visualizationResponse;
+    const visualizationPrompt =
+      generateVisualizationPrompt(parsedFunnelResponse);
+
+    if (IS_OLLAMA) {
+      const visualOllamaResponse = await axios.post(
+        "http://localhost:11434/api/generate",
+        {
+          model: "llama3",
+          prompt: visualizationPrompt,
+          stream: false,
+        }
+      );
+      visualizationResponse = visualOllamaResponse.data.response;
+    } else if (IS_GEMINI) {
+      const visualGeminiResponse = await axios.post(
+        `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          contents: [
+            {
+              parts: [{ text: visualizationPrompt }],
+            },
+          ],
+        }
+      );
+      visualizationResponse =
+        visualGeminiResponse.data.candidates[0]?.content?.parts[0]?.text;
+    } else {
+      const visualOpenAiResponse = await axios.post(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "system",
+              content: "You are a data visualization expert.",
+            },
+            {
+              role: "user",
+              content: visualizationPrompt,
+            },
+          ],
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      visualizationResponse =
+        visualOpenAiResponse.data.choices[0]?.message?.content;
     }
+
+    const parsedVisualizationResponse = parseAIResponse(visualizationResponse);
 
     return res.json({
       message: "Funnel flow generated successfully",
-      response: funnelFlowData,
-      flowData: flowData,
+      funnelData: parsedFunnelResponse,
+      visualizationData: parsedVisualizationResponse,
     });
   } catch (error) {
     console.error(
       "Error generating funnel flow:",
       error.response?.data || error.message
     );
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({
+      error: error.message,
+      details: error.response?.data || "No additional details available",
+    });
   }
 });
 
