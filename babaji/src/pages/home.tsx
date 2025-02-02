@@ -9,6 +9,8 @@ import {
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { styled } from "@mui/material/styles";
+import axios from "axios";
+import { useBusinessContext } from "../context/BusinessContext";
 
 // Styled component for the upload button
 const VisuallyHiddenInput = styled("input")({
@@ -24,18 +26,37 @@ const VisuallyHiddenInput = styled("input")({
 });
 
 export default function Home() {
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const { setBusinessId } = useBusinessContext();
+
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Handle file upload logic here
-      console.log("File uploaded:", file);
+      const formData = new FormData();
+      formData.append("doc", file);
+
+      try {
+        const response = await axios.post(
+          "http://localhost:3000/process-document",
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        setBusinessId(response.data.businessId);
+      } catch (error) {
+        console.error("Error uploading file:", error);
+      }
     }
   };
 
   return (
     <Container maxWidth="lg">
       <Box sx={{ py: 8 }}>
-        {/* Hero Section */}
         <Stack spacing={4} alignItems="center" textAlign="center">
           <Typography variant="h2" component="h1" fontWeight="bold">
             AI-Powered Marketing Automation
