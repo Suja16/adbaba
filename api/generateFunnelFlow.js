@@ -65,11 +65,15 @@ const generateVisualizationPrompt = (funnelData) => {
    - position (x, y coordinates)
    - data (label and any additional info)
 3. Root node should be "Marketing Funnel"
-4. Use clear visual hierarchy and consistent spacing
-5. Return valid JSON with 'nodes' and 'edges' arrays
-
-Funnel data to visualize: ${JSON.stringify(funnelData)}
-
+4. Return valid JSON with 'nodes' and 'edges' arrays
+5. you need to create marketing funnel visualization for the following data:
+ ${JSON.stringify(funnelData)}
+6.you need to suggest good marketing platform for the business based on the visualization
+7. give me good examples of social media platforms that can be used for the marketing.
+8. give me whole digram of the marketing funnel which reaches the target audience and visualize the data in nodes and edges.
+9.give mefor the visualization I need atleast 5 level of depth.
+10.use personliased labeling for the nodes and edges accroding to brands like use brand name etc...
+11. reach the end user with the visualization.
 Expected structure:
 {
   "nodes": [

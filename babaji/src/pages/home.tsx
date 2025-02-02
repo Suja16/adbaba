@@ -13,7 +13,7 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { styled } from "@mui/material/styles";
 import axios from "axios";
 import { useBusinessContext } from "../context/BusinessContext";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 
@@ -186,7 +186,7 @@ export default function Home() {
                 spacing={2}
                 component="form"
                 onSubmit={handleSubmit(handleContinue)}
-              >
+              />
               <Stack
                 spacing={2}
                 component="form"
@@ -314,4 +314,3 @@ const features = [
       "Create targeted campaigns with AI-driven insights for better customer engagement and conversion rates.",
   },
 ];
-
