@@ -2,11 +2,12 @@ require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const axios = require("axios");
+const bodyParser = require("body-parser")
 const cors = require("cors");
 
 const { generateTweetText } = require("./services/generateTweet.js");
 const { postTweet } = require("./services/postTweet.js");
-const { postToInsta, postVideoToInsta } = require("./services/instagram.js");
+const { postToInsta, postVideoToInsta, postStoryWithStickers } = require("./services/instagram.js");
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -15,6 +16,7 @@ const HASURA_ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET;
 
 app.use(express.json());
 app.use(cors());
+app.use(bodyParser.json());
 
 /**
  * GET /api/generate-tweet/:id
@@ -182,6 +184,22 @@ app.post("/api/post-video-instagram", async (req, res) => {
   } catch (error) {
     console.error("Error posting video to Instagram:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/post-story', async (req, res) => {
+  const { imageUrl } = req.body;
+
+  if (!imageUrl) {
+    return res.status(400).json({ error: 'Image URL is required.' });
+  }
+
+  try {
+    await postStoryWithStickers(imageUrl);
+    return res.status(200).json({ message: 'Story posted successfully!' });
+  } catch (error) {
+    console.error("Error posting story:", error);
+    return res.status(500).json({ error: 'Failed to post story to Instagram.' });
   }
 });
 
