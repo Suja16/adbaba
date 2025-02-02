@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "concurrently \"vite\" \"graphql-codegen --watch --config codegen.ts\"",
     "build": "yarn graphql-codegen && tsc -b && vite build",
-    "lint": "eslint .",
     "preview": "vite preview",
     "codegen": "graphql-codegen --config codegen.ts",
     "codegen:w": "graphql-codegen --watch --config codegen.ts"
@@ -40,6 +39,7 @@
     "@graphql-codegen/typescript-operations": "^4.4.1",
     "@parcel/watcher": "^2.5.1",
     "@types/d3-force": "^3.0.10",
+    "@types/node": "^22.13.0",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",

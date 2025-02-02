@@ -10,7 +10,8 @@
     "paths": {
       "@typings/gql": ["types/gql/index"]
     },
-    "noEmit": true
+    "noEmit": true,
+    "types": ["react", "react-dom", "node"]
   },
   "include": ["src", "types/gql"],
   "exclude": ["node_modules"]

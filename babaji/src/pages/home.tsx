@@ -36,7 +36,7 @@ export default function Home() {
   const [businessId, setBusinessIdState] = useState(null); // State for business ID
   const { register, setValue, handleSubmit } = useForm(); // Initialize useForm
 
-  const fetchBusinessData = async (id) => {
+  const fetchBusinessData = async (id: any) => {
     const HASURA_GRAPHQL_URL = "https://datathon2025.hasura.app/v1/graphql"; // Replace with your Hasura GraphQL endpoint
     const HASURA_ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET; // Your Hasura admin secret
 
@@ -84,7 +84,7 @@ export default function Home() {
     }
   };
 
-  const handleFileUpload = async (event) => {
+  const handleFileUpload = async (event: any) => {
     const file = event.target.files?.[0];
     if (file) {
       const formData = new FormData();
@@ -102,10 +102,14 @@ export default function Home() {
               "Content-Type": "multipart/form-data",
             },
             onUploadProgress: (progressEvent) => {
-              const total = progressEvent.total;
+              const totalN = progressEvent.total;
               const current = progressEvent.loaded;
-              const percentCompleted = Math.round((current * 100) / total);
-              setProgress(percentCompleted);
+
+              // Check if totalN is defined before calculating percentCompleted
+              if (totalN !== undefined) {
+                const percentCompleted = Math.round((current * 100) / totalN);
+                setProgress(percentCompleted);
+              }
             },
           }
         );
@@ -134,7 +138,7 @@ export default function Home() {
     }
   };
 
-  const handleContinue = (data) => {
+  const handleContinue = (data: any) => {
     // Handle the continue action (e.g., navigate to the next step)
     console.log("Continue with data:", data);
   };
@@ -172,7 +176,11 @@ export default function Home() {
           {/* Render the pre-filled form if formData is available */}
           {businessId && (
             <Box sx={{ mt: 4, width: "100%" }}>
-              <Stack spacing={2} component="form" onSubmit={handleSubmit(handleContinue)}>
+              <Stack
+                spacing={2}
+                component="form"
+                onSubmit={handleSubmit(handleContinue)}
+              >
                 <TextField
                   label="Company Name"
                   {...register("name")}
@@ -190,11 +198,7 @@ export default function Home() {
                   multiline
                   rows={4}
                 />
-                <TextField
-                  label="Website"
-                  {...register("website")}
-                  fullWidth
-                />
+                <TextField label="Website" {...register("website")} fullWidth />
                 <TextField
                   label="Headquarters Location"
                   {...register("hq_location")}
@@ -227,11 +231,7 @@ export default function Home() {
                   multiline
                   rows={4}
                 />
-                <Button
-                  variant="contained"
-                  color="primary"
-                  type="submit"
-                >
+                <Button variant="contained" color="primary" type="submit">
                   Continue
                 </Button>
               </Stack>
