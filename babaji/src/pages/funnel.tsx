@@ -9,7 +9,7 @@ import ReactFlow, {
   Controls,
 } from "reactflow";
 import { stratify, tree } from "d3-hierarchy";
-import { Box } from "@mui/material";
+import { Box, LinearProgress, Typography } from "@mui/material";
 import "reactflow/dist/style.css";
 
 // import your BusinessContext hook or any other context as needed
@@ -57,7 +57,7 @@ const getLayoutedElements = (nodes, edges) => {
   return { nodes: layoutedNodes, edges };
 };
 
-const LayoutFlow = () => {
+const LayoutFlow = ({ setLoading }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
@@ -66,6 +66,7 @@ const LayoutFlow = () => {
 
   useEffect(() => {
     const fetchFunnelData = async () => {
+      setLoading(true);
       try {
         console.log("Attempting to fetch with businessId:", businessId);
         const response = await fetch(
@@ -101,6 +102,8 @@ const LayoutFlow = () => {
         setEdges(layoutedEdges);
       } catch (error) {
         console.error("Error fetching funnel data:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -109,7 +112,7 @@ const LayoutFlow = () => {
     } else {
       console.log("No businessId available");
     }
-  }, [businessId, setNodes, setEdges]);
+  }, [businessId, setNodes, setEdges, setLoading]);
 
   return (
     <ReactFlow
@@ -126,12 +129,56 @@ const LayoutFlow = () => {
   );
 };
 
-const Funnel = () => (
-  <Box sx={{ width: "100%", height: "100vh" }}>
-    <ReactFlowProvider>
-      <LayoutFlow />
-    </ReactFlowProvider>
-  </Box>
-);
+const Funnel = () => {
+  const [loading, setLoading] = useState(false); // State to manage loading
+  const [currentFactIndex, setCurrentFactIndex] = useState(0); // State for current fact
+  const marketingFacts = [
+    "Generating a personalized funnel...",
+    "We create solutions tailored to your needs.",
+    "Your success is our priority.",
+    "Data-driven insights for better decisions.",
+    "Streamlining your processes for efficiency.",
+  ];
+
+  useEffect(() => {
+    let interval;
+    if (loading) {
+      interval = setInterval(() => {
+        setCurrentFactIndex((prevIndex) => (prevIndex + 1) % marketingFacts.length);
+      }, 3000); // Change fact every 2 seconds
+    }
+    return () => clearInterval(interval); // Cleanup interval on unmount
+  }, [loading]);
+
+  return (
+    <Box sx={{ width: "100%", height: "100vh", position: "relative", bgcolor: 'primary.main' }}>
+      {loading && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent background
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000, // Ensure it is on top
+          }}
+        >
+          <LinearProgress sx={{ width: "50%", marginBottom: 2 }} /> {/* Centered progress bar */}
+          <Typography variant="h6" sx={{ color: 'white' }}>
+            {marketingFacts[currentFactIndex]} {/* Display current marketing fact */}
+          </Typography>
+        </Box>
+      )}
+      <ReactFlowProvider>
+        <LayoutFlow setLoading={setLoading} />
+      </ReactFlowProvider>
+    </Box>
+  );
+};
 
 export default Funnel;
