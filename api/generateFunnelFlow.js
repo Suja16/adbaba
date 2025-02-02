@@ -114,7 +114,7 @@ Finally, Ensure that the funnel flow is aligned with the industry processes, tar
       };
 
       const ollamaResponse = await axios.post(
-        "http://localhost:11434/api/generate",
+        "https://7e38-2402-3a80-6d7-98aa-517d-394b-57f-3960.ngrok-free.app/api/generate",
         ollamaPayload,
         {
           headers: { "Content-Type": "application/json" },
@@ -228,7 +228,7 @@ Finally, Ensure that the funnel flow is aligned with the industry processes, tar
 
     if (IS_OLLAMA) {
       const flowOllamaResponse = await axios.post(
-        "http://localhost:11434/api/generate",
+        "https://7e38-2402-3a80-6d7-98aa-517d-394b-57f-3960.ngrok-free.app/api/generate",
         {
           model: "llama3",
           prompt: visualizationPrompt,

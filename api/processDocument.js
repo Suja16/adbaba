@@ -94,7 +94,7 @@ Based on this document, extract and structure relevant data into the following J
       };
 
       const ollamaResponse = await axios.post(
-        "http://localhost:11434/api/generate",
+        "https://7e38-2402-3a80-6d7-98aa-517d-394b-57f-3960.ngrok-free.app/api/generate",
         ollamaPayload,
         {
           headers: { "Content-Type": "application/json" },
