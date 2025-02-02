@@ -244,6 +244,7 @@ Based on this document, extract and structure relevant data into the following J
           message: "Document processed and data inserted successfully",
           businessId: insertedId,
           response: extractedData,
+          hasuraData: hasuraResponse.data.data.insert_businesses_one,
         });
       } catch (hasuraError) {
         console.error("Hasura mutation error:", hasuraError.message);
