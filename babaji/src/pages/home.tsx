@@ -6,11 +6,14 @@ import {
   Stack,
   Paper,
   Grid,
+  LinearProgress,
+  CircularProgress,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { styled } from "@mui/material/styles";
 import axios from "axios";
 import { useBusinessContext } from "../context/BusinessContext";
+import { useState } from "react";
 
 // Styled component for the upload button
 const VisuallyHiddenInput = styled("input")({
@@ -27,6 +30,8 @@ const VisuallyHiddenInput = styled("input")({
 
 export default function Home() {
   const { setBusinessId } = useBusinessContext();
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -36,7 +41,11 @@ export default function Home() {
       const formData = new FormData();
       formData.append("doc", file);
 
+      setLoading(true); // Start loading
+      setProgress(0); // Reset progress
+
       try {
+        // Start the upload
         const response = await axios.post(
           "http://localhost:3000/process-document",
           formData,
@@ -44,15 +53,28 @@ export default function Home() {
             headers: {
               "Content-Type": "multipart/form-data",
             },
+            onUploadProgress: (progressEvent) => {
+              const total = progressEvent.total;
+              const current = progressEvent.loaded;
+              const percentCompleted = Math.round((current * 100) / total);
+              setProgress(percentCompleted); // Update progress
+            },
           }
         );
 
         setBusinessId(response.data.businessId);
+
+        // Simulate a 3-second loading time
+        await new Promise((resolve) => setTimeout(resolve, 5000));
       } catch (error) {
         console.error("Error uploading file:", error);
+      } finally {
+        setLoading(false); // Stop loading
+        setProgress(100); // Ensure progress is complete
       }
     }
   };
+
 
   return (
     <Container maxWidth="lg">
@@ -67,16 +89,22 @@ export default function Home() {
             multi-agent system
           </Typography>
 
-          <Button
-            component="label"
-            variant="contained"
-            size="large"
-            startIcon={<CloudUploadIcon />}
-            sx={{ mb: 4 }}
-          >
-            Upload Campaign Data
-            <VisuallyHiddenInput type="file" onChange={handleFileUpload} />
-          </Button>
+          {!loading ? (
+            <Button
+              component="label"
+              variant="contained"
+              size="large"
+              startIcon={<CloudUploadIcon />}
+              sx={{ mb: 4 }}
+            >
+              Upload Campaign Data
+              <VisuallyHiddenInput type="file" onChange={handleFileUpload} />
+            </Button>
+          ) : (
+            <Box sx={{ width: '100%', mt: 4 }}>
+              <LinearProgress color="primary" value={progress} />
+            </Box>
+          )}
         </Stack>
 
         {/* Features Section */}
