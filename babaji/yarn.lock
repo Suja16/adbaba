@@ -4056,7 +4056,7 @@ normalize-path@^2.1.1:
 
 notistack@^3.0.2:
   version "3.0.2"
-  resolved "https://registry.npmjs.org/notistack/-/notistack-3.0.2.tgz"
+  resolved "https://registry.yarnpkg.com/notistack/-/notistack-3.0.2.tgz#009799c3fccddeffac58565ba1657d27616dfabd"
   integrity sha512-0R+/arLYbK5Hh7mEfR2adt0tyXJcCC9KkA2hc56FeWik2QN6Bm/S4uW+BjzDARsJth5u06nTjelSw/VSnB1YEA==
   dependencies:
     clsx "^1.1.0"

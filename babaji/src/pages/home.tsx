@@ -15,6 +15,7 @@ import axios from "axios";
 import { useBusinessContext } from "../context/BusinessContext";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 
 // Styled component for the upload button
 const VisuallyHiddenInput = styled("input")({
@@ -114,18 +115,21 @@ export default function Home() {
           }
         );
 
-        const { businessId } = response.data;
-        setBusinessIdState(businessId); // Set the business ID state
-        setBusinessId(businessId); // Set the context business ID
+        const { businessId, response: businessData } = response.data;
+        setBusinessIdState(businessId);
+        setBusinessId(businessId);
 
-        // Fetch business data using the business ID
-        const businessData = await fetchBusinessData(businessId);
-        if (businessData) {
-          // Pre-fill the form fields with the retrieved data
-          Object.keys(businessData).forEach((key) => {
-            setValue(key, businessData[key]); // Set form values
-          });
-        }
+        // Pre-fill the form fields with the retrieved data
+        Object.entries(businessData).forEach(([key, value]) => {
+          // Handle array and object values by converting them to strings
+          if (Array.isArray(value)) {
+            setValue(key, value.join(", "));
+          } else if (typeof value === "object" && value !== null) {
+            setValue(key, JSON.stringify(value));
+          } else {
+            setValue(key, value);
+          }
+        });
 
         // Simulate a 5-second loading time
         await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -137,10 +141,12 @@ export default function Home() {
       }
     }
   };
+  const navigate = useNavigate();
 
   const handleContinue = (data: any) => {
     // Handle the continue action (e.g., navigate to the next step)
     console.log("Continue with data:", data);
+    navigate("/funnel");
   };
 
   return (
@@ -173,9 +179,14 @@ export default function Home() {
             </Box>
           )}
 
-          {/* Render the pre-filled form if formData is available */}
+          {/* Update the form section to include all available fields */}
           {businessId && (
             <Box sx={{ mt: 4, width: "100%" }}>
+              <Stack
+                spacing={2}
+                component="form"
+                onSubmit={handleSubmit(handleContinue)}
+              >
               <Stack
                 spacing={2}
                 component="form"
@@ -199,6 +210,11 @@ export default function Home() {
                   rows={4}
                 />
                 <TextField label="Website" {...register("website")} fullWidth />
+                <TextField
+                  label="Founded Year"
+                  {...register("founded_year")}
+                  fullWidth
+                />
                 <TextField
                   label="Headquarters Location"
                   {...register("hq_location")}
@@ -230,6 +246,26 @@ export default function Home() {
                   fullWidth
                   multiline
                   rows={4}
+                />
+                <TextField
+                  label="Marketing Budget"
+                  {...register("marketing_budget")}
+                  fullWidth
+                />
+                <TextField
+                  label="Customer Acquisition Cost"
+                  {...register("customer_acquisition_cost")}
+                  fullWidth
+                />
+                <TextField
+                  label="Content Strategy"
+                  {...register("content_strategy")}
+                  fullWidth
+                />
+                <TextField
+                  label="Target Location"
+                  {...register("target_location")}
+                  fullWidth
                 />
                 <Button variant="contained" color="primary" type="submit">
                   Continue
@@ -278,3 +314,4 @@ const features = [
       "Create targeted campaigns with AI-driven insights for better customer engagement and conversion rates.",
   },
 ];
+

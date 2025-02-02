@@ -5,8 +5,6 @@ import ReactFlow, {
   useEdgesState,
   Background,
   BackgroundVariant,
-  Node,
-  Edge,
   MiniMap,
   Controls,
 } from "reactflow";
@@ -14,74 +12,46 @@ import { stratify, tree } from "d3-hierarchy";
 import { Box } from "@mui/material";
 import "reactflow/dist/style.css";
 
-const initialNodes = [
-  {
-    id: "1",
-    type: "input",
-    data: { label: "input" },
-    position: { x: 0, y: 0 },
-  },
-  {
-    id: "2",
-    data: { label: "node 2" },
-    position: { x: 0, y: 100 },
-  },
-  {
-    id: "2a",
-    data: { label: "node 2a" },
-    position: { x: 0, y: 200 },
-  },
-  {
-    id: "2b",
-    data: { label: "node 2b" },
-    position: { x: 0, y: 300 },
-  },
-  {
-    id: "2c",
-    data: { label: "node 2c" },
-    position: { x: 0, y: 400 },
-  },
-  {
-    id: "2d",
-    data: { label: "node 2d" },
-    position: { x: 0, y: 500 },
-  },
-  {
-    id: "3",
-    data: { label: "node 3" },
-    position: { x: 200, y: 100 },
-  },
-];
+// import your BusinessContext hook or any other context as needed
+import { useBusinessContext } from "../context/BusinessContext";
 
-const initialEdges = [
-  { id: "e12", source: "1", target: "2", animated: true },
-  { id: "e13", source: "1", target: "3", animated: true },
-  { id: "e22a", source: "2", target: "2a", animated: true },
-  { id: "e22b", source: "2", target: "2b", animated: true },
-  { id: "e22c", source: "2", target: "2c", animated: true },
-  { id: "e2c2d", source: "2c", target: "2d", animated: true },
-];
+// Set default / fallback nodes and edges (optional)
+const initialNodes = [];
+const initialEdges = [];
 
-// Define node dimensions
+// Define node dimensions for tree layout
 const nodeWidth = 172;
 const nodeHeight = 36;
 
-const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
-  if (nodes.length === 0) return { nodes, edges };
+// A helper function to position nodes in a tree-like layout
+const getLayoutedElements = (nodes, edges) => {
+  if (nodes.length === 0) {
+    return { nodes, edges };
+  }
 
   // Create a hierarchy from the nodes and edges
-  const hierarchy = stratify<Node>()
+  const hierarchy = stratify()
     .id((d) => d.id)
-    .parentId((d) => edges.find((edge) => edge.target === d.id)?.source);
+    .parentId((d) => {
+      // for each node, find if there's an edge whose `target` is this node
+      // that edge's `source` is the parent
+      const parentEdge = edges.find((edge) => edge.target === d.id);
+      return parentEdge?.source || null;
+    });
 
   const root = hierarchy(nodes);
 
-  const treeLayout = tree<Node>().nodeSize([nodeWidth * 2, nodeHeight * 2]);
+  // Configure d3 tree layout
+  const treeLayout = tree().nodeSize([nodeWidth * 2, nodeHeight * 4]);
   const layout = treeLayout(root);
 
+  // Map the d3-hierarchy positions back to React Flow positions
   const layoutedNodes = layout.descendants().map((node) => ({
     ...node.data,
-    position: { x: node.x - nodeWidth / 2, y: node.y - nodeHeight / 2 },
+    position: {
+      x: node.x - nodeWidth / 2,
+      y: node.y - nodeHeight / 2,
+    },
   }));
 
   return { nodes: layoutedNodes, edges };
@@ -90,17 +60,56 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
 const LayoutFlow = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const [layouted, setLayouted] = useState(false);
+
+  // If you use a context to get businessId
+  const { businessId } = useBusinessContext();
 
   useEffect(() => {
-    if (!layouted) {
-      const { nodes: layoutedNodes, edges: layoutedEdges } =
-        getLayoutedElements(nodes, edges);
-      setNodes(layoutedNodes);
-      setEdges(layoutedEdges);
-      setLayouted(true);
+    const fetchFunnelData = async () => {
+      try {
+        console.log("Attempting to fetch with businessId:", businessId);
+        const response = await fetch(
+          "http://localhost:3000/generate-funnel-flow",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ businessId }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch funnel data");
+        }
+
+        const data = await response.json();
+        console.log("Funnel Data:", data);
+
+        // data.visualizationData contains { nodes: [...], edges: [...] }
+        const { nodes: newNodes, edges: newEdges } = data.visualizationData;
+
+        // OPTIONAL: if you want each edge to be animated, you can map them:
+        const edgesWithAnimation = newEdges.map((edge) => ({
+          ...edge,
+          animated: true,
+        }));
+
+        // Apply D3 layout before setting them in state:
+        const { nodes: layoutedNodes, edges: layoutedEdges } =
+          getLayoutedElements(newNodes, edgesWithAnimation);
+
+        setNodes(layoutedNodes);
+        setEdges(layoutedEdges);
+      } catch (error) {
+        console.error("Error fetching funnel data:", error);
+      }
+    };
+
+    if (businessId) {
+      fetchFunnelData();
+    } else {
+      console.log("No businessId available");
     }
-  }, [layouted, nodes, edges, setNodes, setEdges]);
+  }, [businessId, setNodes, setEdges]);
 
   return (
     <ReactFlow
