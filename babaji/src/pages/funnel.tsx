@@ -11,11 +11,12 @@ import ReactFlow, {
 import { stratify, tree } from "d3-hierarchy";
 import { Box, LinearProgress, Typography, Button } from "@mui/material";
 import { Link } from "react-router-dom";
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import "reactflow/dist/style.css";
 
 // import your BusinessContext hook or any other context as needed
 import { useBusinessContext } from "../context/BusinessContext";
+import { ArrowBack } from "@mui/icons-material";
 
 // Set default / fallback nodes and edges (optional)
 const initialNodes = [];
@@ -146,14 +147,23 @@ const Funnel = () => {
     let interval;
     if (loading) {
       interval = setInterval(() => {
-        setCurrentFactIndex((prevIndex) => (prevIndex + 1) % marketingFacts.length);
+        setCurrentFactIndex(
+          (prevIndex) => (prevIndex + 1) % marketingFacts.length
+        );
       }, 3000); // Change fact every 2 seconds
     }
     return () => clearInterval(interval); // Cleanup interval on unmount
   }, [loading]);
 
   return (
-    <Box sx={{ width: "100%", height: "100vh", position: "relative", bgcolor: 'primary.main' }}>
+    <Box
+      sx={{
+        width: "100%",
+        height: "100vh",
+        position: "relative",
+        bgcolor: "primary.main",
+      }}
+    >
       {loading && (
         <Box
           sx={{
@@ -170,23 +180,56 @@ const Funnel = () => {
             zIndex: 1000, // Ensure it is on top
           }}
         >
-          <LinearProgress sx={{ width: "50%", marginBottom: 2 }} /> {/* Centered progress bar */}
-          <Typography variant="h6" sx={{ color: 'white', marginBottom: 2 }}>
-            {marketingFacts[currentFactIndex]} {/* Display current marketing fact */}
+          <LinearProgress sx={{ width: "50%", marginBottom: 2 }} />{" "}
+          {/* Centered progress bar */}
+          <Typography variant="h6" sx={{ color: "white", marginBottom: 2 }}>
+            {marketingFacts[currentFactIndex]}{" "}
+            {/* Display current marketing fact */}
           </Typography>
         </Box>
       )}
       <ReactFlowProvider>
-      <LayoutFlow setLoading={setLoading} />
+        <Link
+          to="/"
+          style={{
+            position: "absolute",
+            top: 16,
+            left: 16,
+            textDecoration: "none",
+          }}
+        >
+          <Button
+            variant="contained"
+            color="secondary" // Use theme color
+            endIcon={<ArrowBack />} // Add arrow icon
+            sx={{
+              opacity: 0.9, // Slightly transparent
+              "&:hover": {
+                opacity: 1, // Full opacity on hover
+              },
+            }}
+          >
+            Go Back
+          </Button>
+        </Link>
+        <LayoutFlow setLoading={setLoading} />
         {/* CTA Button in the top right corner */}
-        <Link to="/socials" style={{ position: 'absolute', top: 16, right: 16, textDecoration: 'none' }}>
+        <Link
+          to="/socials"
+          style={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            textDecoration: "none",
+          }}
+        >
           <Button
             variant="contained"
             color="secondary" // Use theme color
             endIcon={<ArrowForwardIcon />} // Add arrow icon
             sx={{
               opacity: 0.9, // Slightly transparent
-              '&:hover': {
+              "&:hover": {
                 opacity: 1, // Full opacity on hover
               },
             }}

@@ -6,7 +6,7 @@ const StyleThemeProvider: React.FC<PropsWithChildren> = ({ children }) => {
     palette: {
       mode: "dark",
       primary: {
-        main: "#EC27B6",
+        main: "#0b031e",
       },
       secondary: {
         main: "#FFFFFF",
