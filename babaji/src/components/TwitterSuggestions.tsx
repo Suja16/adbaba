@@ -45,7 +45,6 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
   }, [bId]);
 
   const handleAccept = async (id: number) => {
-    alert(`Tweet ${id} accepted!`);
     try {
       await axios.post(`http://localhost:3002/api/post-tweet`, {
         tweetText: tweets.find((tweet) => tweet.id === id)?.content,
@@ -61,13 +60,27 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
 
   const handleReject = (id: number) => {
     alert(`Tweet ${id} rejected!`);
+    const newTweets = tweets.filter((tweet) => tweet.id !== id);
+    setTweets(newTweets);
   };
 
-  const generateNewSuggestion = () => {
+  const generateNewSuggestion = async () => {
+    if (!prompt) {
+      return;
+    }
+
+    const response = await axios.get(
+      `http://localhost:3002/api/generate-tweet/${bId}`,
+      {
+        timeout: 100000,
+      }
+    );
+    console.log(response.data);
+
     const newTweet: Tweet = {
-      id: Math.random(),
-      content: `New tweet suggestion based on: "${prompt}"`,
-      hasMedia: Math.random() > 0.5,
+      id: tweets.length + 1,
+      content: response.data.tweetText,
+      hasMedia: false,
     };
     setTweets([...tweets, newTweet]);
     setPrompt("");

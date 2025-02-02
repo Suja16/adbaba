@@ -115,8 +115,10 @@ app.post("/api/post-tweet", async (req, res) => {
   try {
     // If an image URL is provided, download the image
     if (imageUrl) {
-      const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-      const mediaData = Buffer.from(response.data, 'binary');
+      const response = await axios.get(imageUrl, {
+        responseType: "arraybuffer",
+      });
+      const mediaData = Buffer.from(response.data, "binary");
       mediaFilePath = `uploads/${Date.now()}.jpg`; // Save the image with a unique name
       fs.writeFileSync(mediaFilePath, mediaData); // Write the image to the filesystem
     }
