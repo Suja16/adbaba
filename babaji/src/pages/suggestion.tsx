@@ -16,7 +16,12 @@ export default function Suggestion() {
   return (
     <Box>
       {/* <Typography variant="h1"> {pageName}</Typography> */}
-      {normalizedPage == "twitter" && <TwitterSuggestions />}
+      {normalizedPage == "twitter" && (
+        <TwitterSuggestions
+          bId="8e246e2f-6558-4e66-830f-30414224f64c
+"
+        />
+      )}
     </Box>
   );
 }
