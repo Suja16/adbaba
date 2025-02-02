@@ -21,7 +21,8 @@ Guidelines:
   const url =
     "https://7e38-2402-3a80-6d7-98aa-517d-394b-57f-3960.ngrok-free.app/api/chat";
   const data = {
-    model: "deepseek-r1:8b",
+    // model: "deepseek-r1:8b",
+    model: "llama3",
     messages: [
       {
         role: "user",

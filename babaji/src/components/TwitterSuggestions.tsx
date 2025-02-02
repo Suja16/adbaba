@@ -72,7 +72,7 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
   };
 
   const generateNewSuggestion = async () => {
-    if (!prompt) {
+    if (!prompt || !bId || loading) {
       return;
     }
     setLoading(true);
@@ -124,7 +124,13 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
           }}
         >
           <Box>
-            <Typography variant="h6" align="center" gutterBottom>
+            <Typography
+              variant="h6"
+              align="center"
+              sx={{
+                marginBottom: "24px",
+              }}
+            >
               Social Media Agent Generating Tweets...
             </Typography>
             <LinearProgress />
