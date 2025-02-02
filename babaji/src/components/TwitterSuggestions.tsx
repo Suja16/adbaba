@@ -25,7 +25,10 @@ export default function TwitterSuggestions({ bId }: { bId: string }) {
         console.log("Fetching tweets for bId:", bId);
 
         const response = await axios.get(
-          `${import.meta.env.VITE_AGENTS_API}/api/generate-tweet/${bId}`
+          `http://localhost:3002/api/generate-tweet/${bId}`,
+          {
+            timeout: 100000,
+          }
         );
         console.log(response.data);
 

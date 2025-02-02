@@ -2,6 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const axios = require("axios");
+const cors = require("cors");
+
 const { generateTweetText } = require("./services/generateTweet.js");
 const { postTweet } = require("./services/postTweet.js");
 const { postToInsta, postVideoToInsta } = require("./services/instagram.js");
@@ -12,6 +14,7 @@ const HASURA_GRAPHQL_URL = "https://datathon2025.hasura.app/v1/graphql";
 const HASURA_ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET;
 
 app.use(express.json());
+app.use(cors());
 
 /**
  * GET /api/generate-tweet/:id
@@ -123,7 +126,9 @@ app.post("/api/post-instagram", async (req, res) => {
   console.log("Received request body:", req.body);
 
   if (!imageUrl || !caption) {
-    return res.status(400).json({ error: "Image URL and caption are required." });
+    return res
+      .status(400)
+      .json({ error: "Image URL and caption are required." });
   }
 
   try {
@@ -146,12 +151,17 @@ app.post("/api/post-video-instagram", async (req, res) => {
   console.log("Received request body:", req.body);
 
   if (!videoUrl || !coverUrl || !caption) {
-    return res.status(400).json({ error: "Video URL, cover URL, and caption are required." });
+    return res
+      .status(400)
+      .json({ error: "Video URL, cover URL, and caption are required." });
   }
 
   try {
     const publishResult = await postVideoToInsta(videoUrl, coverUrl, caption); // Call the function with parameters
-    res.json({ message: "Video uploaded to Instagram successfully.", publishResult });
+    res.json({
+      message: "Video uploaded to Instagram successfully.",
+      publishResult,
+    });
   } catch (error) {
     console.error("Error posting video to Instagram:", error);
     res.status(500).json({ error: error.message });
